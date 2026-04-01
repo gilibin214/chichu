@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chichu — Cookie Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #fdf8f2; --warm-white: #fffbf7;
+  --matcha: #6a8f5a; --matcha-mid: #8aab78; --matcha-light: #b8d4a8; --matcha-faint: #e8f2e2; --matcha-pale: #f2f8ee;
+  --pink: #f4a7b9; --pink-mid: #f7bfcc; --pink-light: #fad4df; --pink-faint: #fde8ee; --pink-pale: #fff2f5;
+  --text-dark: #2d2d2d; --text-mid: #5a5a5a; --text-muted: #9a8f8a;
+  --border-soft: #f0e8e2;
+  --green-ok: #4a8c6a; --green-ok-bg: #e2f2ea;
+  --red-err: #c0392b; --red-err-bg: #fde8e6;
+  --amber: #b07a2a; --amber-bg: #fdf0d8;
+  --font-display: 'Nunito', sans-serif; --font-body: 'Nunito Sans', sans-serif;
+  --radius: 14px; --radius-sm: 9px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-body); background: var(--cream); color: var(--text-dark); min-height: 100vh; }
+.header { background: var(--warm-white); border-bottom: 2px solid var(--pink-light); padding: .4rem 1.25rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.header-logo img { height: 56px; display: block; }
+.week-nav { display: flex; align-items: center; gap: 8px; }
+.week-btn { background: var(--matcha-faint); border: 1.5px solid var(--matcha-light); border-radius: 50%; width: 32px; height: 32px; color: var(--matcha); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.week-btn:hover { background: var(--matcha-light); color: #fff; }
+.week-label { font-size: 13px; font-weight: 700; color: var(--matcha); font-family: var(--font-display); min-width: 72px; text-align: center; }
+.tabs { background: var(--warm-white); border-bottom: 2px solid var(--pink-light); display: flex; overflow-x: auto; padding: 0 1rem; }
+.tab { padding: 11px 14px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer; color: var(--text-muted); border-bottom: 2.5px solid transparent; margin-bottom: -2px; white-space: nowrap; font-family: var(--font-display); }
+.tab.active { color: var(--matcha); border-bottom-color: var(--matcha); font-weight: 700; }
+.tab:hover:not(.active) { color: var(--matcha-mid); }
+.content { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+.panel { display: none; } .panel.active { display: block; }
+.card { background: var(--warm-white); border: 1.5px solid var(--pink-light); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+.card-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; margin-bottom: 14px; color: var(--matcha); }
+.section-header { margin-bottom: 1.25rem; }
+.section-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--matcha); }
+.section-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; margin-bottom: 1rem; }
+.metric { background: var(--matcha-pale); border: 1.5px solid var(--matcha-light); border-radius: var(--radius-sm); padding: .875rem 1rem; }
+.metric-label { font-size: 11px; color: var(--matcha); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; font-family: var(--font-display); }
+.metric-value { font-size: 20px; font-weight: 700; color: var(--text-dark); font-family: var(--font-display); }
+.metric-value.pos { color: var(--green-ok); } .metric-value.neg { color: var(--red-err); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-size: 11px; font-weight: 700; color: var(--matcha); text-transform: uppercase; letter-spacing: .05em; padding: 0 8px 8px 0; border-bottom: 1.5px solid var(--pink-light); font-family: var(--font-display); }
+th.r, td.r { text-align: right; padding-right: 0; }
+td { padding: 9px 8px 9px 0; border-bottom: 1px solid var(--border-soft); vertical-align: middle; font-size: 13px; }
+tr:last-child td { border-bottom: none; }
+input[type=number], input[type=text], input[type=date], select { padding: 7px 10px; font-size: 13px; border: 1.5px solid var(--pink-light); border-radius: var(--radius-sm); background: var(--pink-pale); color: var(--text-dark); font-family: var(--font-body); }
+input[type=number] { width: 72px; text-align: right; }
+input:focus, select:focus { outline: none; border-color: var(--matcha-mid); background: var(--warm-white); }
+.qty-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--border-soft); }
+.qty-row:last-child { border-bottom: none; }
+.qty-name { font-size: 14px; font-weight: 600; font-family: var(--font-display); }
+.qty-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.qty-controls { display: flex; align-items: center; gap: 12px; }
+.qty-btn { width: 32px; height: 32px; border: 1.5px solid var(--pink-mid); border-radius: 50%; background: var(--pink-faint); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: var(--matcha); }
+.qty-btn:hover { background: var(--pink-light); }
+.qty-num { font-size: 17px; font-weight: 700; min-width: 28px; text-align: center; color: var(--matcha); font-family: var(--font-display); }
+.divider { height: 1.5px; background: var(--pink-light); margin: 10px 0; }
+.trow { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; }
+.tlabel { font-size: 13px; color: var(--text-muted); }
+.tval { font-size: 13px; font-weight: 600; font-family: var(--font-display); }
+.trow.big .tlabel { font-size: 15px; color: var(--text-dark); font-weight: 600; font-family: var(--font-display); }
+.trow.big .tval { font-size: 21px; }
+.pos { color: var(--green-ok); } .neg { color: var(--red-err); }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; font-family: var(--font-display); }
+.b-ok { background: var(--green-ok-bg); color: var(--green-ok); }
+.b-warn { background: var(--amber-bg); color: var(--amber); }
+.b-danger { background: var(--red-err-bg); color: var(--red-err); }
+.b-info { background: var(--matcha-faint); color: var(--matcha); }
+.b-muted { background: var(--border-soft); color: var(--text-muted); }
+.btn { padding: 9px 18px; border: 1.5px solid var(--pink-light); border-radius: var(--radius-sm); background: var(--warm-white); cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-dark); font-family: var(--font-display); }
+.btn:hover { background: var(--pink-faint); }
+.btn-primary { background: var(--matcha); color: #fff; border-color: var(--matcha); }
+.btn-primary:hover { background: var(--matcha-mid); border-color: var(--matcha-mid); }
+.btn-full { width: 100%; padding: 11px; margin-top: .625rem; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.alert { border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: .75rem; font-size: 13px; font-weight: 500; }
+.alert-warn { background: var(--amber-bg); color: var(--amber); border-left: 3px solid var(--amber); }
+.alert-danger { background: var(--red-err-bg); color: var(--red-err); border-left: 3px solid var(--red-err); }
+.form-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.form-label { font-size: 12px; color: var(--text-muted); min-width: 82px; font-weight: 500; }
+.pur-item { border-bottom: 1px solid var(--border-soft); padding: 10px 0; }
+.pur-item:last-child { border-bottom: none; }
+.pur-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+.pur-date { font-size: 12px; color: var(--text-muted); }
+.pur-total { font-size: 14px; font-weight: 700; font-family: var(--font-display); }
+.pur-lines { font-size: 12px; color: var(--text-muted); line-height: 1.7; margin-top: 4px; }
+.carry-head { font-size: 11px; font-weight: 700; color: var(--matcha); text-transform: uppercase; letter-spacing: .04em; font-family: var(--font-display); }
+.history-week { background: var(--matcha-pale); border: 1.5px solid var(--matcha-light); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: .75rem; }
+.history-week-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.history-week-label { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--matcha); }
+.info-msg { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+.del-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 20px; padding: 0 2px; line-height: 1; }
+.del-btn:hover { color: var(--red-err); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(106,143,90,.35); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.modal { background: var(--warm-white); border: 2px solid var(--pink-light); border-radius: var(--radius); padding: 1.5rem; max-width: 420px; width: 100%; }
+.modal-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin-bottom: 6px; color: var(--matcha); }
+.modal-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 1.25rem; }
+.modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
+.modal-inv-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border-soft); font-size: 13px; }
+.modal-inv-row:last-child { border-bottom: none; }
+.modal-inv-name { color: var(--text-mid); }
+.modal-inv-rem { font-weight: 700; color: var(--matcha); font-family: var(--font-display); }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-logo"><span style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--matcha);">Chichu</span><span style="font-family:var(--font-display);font-size:13px;font-weight:400;color:var(--pink);margin-left:8px;">cookie tracker</span></div>
+  <div class="week-nav">
+    <button class="week-btn" onclick="goWeek(-1)">&#8592;</button>
+    <div class="week-label" id="week-label">Week 1</div>
+    <button class="week-btn" onclick="goWeek(1)">&#8594;</button>
+  </div>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="showTab('orders')">Orders</button>
+  <button class="tab" onclick="showTab('purchases')">Purchases</button>
+  <button class="tab" onclick="showTab('inventory')">Inventory</button>
+  <button class="tab" onclick="showTab('paylater')">PayLater</button>
+  <button class="tab" onclick="showTab('profit')">Profit</button>
+  <button class="tab" onclick="showTab('history')">History</button>
+</div>
+<div class="content">
+<div class="panel active" id="tab-orders">
+  <div class="section-header"><div class="section-title">Weekly Orders</div><div class="section-sub">Log production first, then orders. Profit calculates live.</div></div>
+  <div class="card">
+    <div class="card-title">Production</div>
+    <div class="qty-row"><div><div class="qty-name">Batches made</div><div class="qty-sub">Max 4 per week</div></div><input type="number" min="1" max="4" value="2" id="prod-batches" oninput="updateOrders()" style="width:64px;"></div>
+    <div class="qty-row"><div><div class="qty-name">Actual cookies made</div><div class="qty-sub">Expected: <span id="exp-yield">80</span></div></div><input type="number" min="1" value="80" id="prod-actual" oninput="updateOrders()" style="width:72px;"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Classic Pistachio</div>
+    <div class="qty-row"><div><div class="qty-name">1 pc &mdash; &#8369;100</div></div><div class="qty-controls"><button class="qty-btn" onclick="adj('cp1',-1)">&#8722;</button><div class="qty-num" id="cp1-d">0</div><button class="qty-btn" onclick="adj('cp1',1)">+</button></div></div>
+    <div class="qty-row"><div><div class="qty-name">2 pc bundle &mdash; &#8369;180</div><div class="qty-sub">counts as 2 cookies</div></div><div class="qty-controls"><button class="qty-btn" onclick="adj('cp2',-1)">&#8722;</button><div class="qty-num" id="cp2-d">0</div><button class="qty-btn" onclick="adj('cp2',1)">+</button></div></div>
+    <div class="qty-row"><div><div class="qty-name">3 pc bundle &mdash; &#8369;250</div><div class="qty-sub">counts as 3 cookies</div></div><div class="qty-controls"><button class="qty-btn" onclick="adj('cp3',-1)">&#8722;</button><div class="qty-num" id="cp3-d">0</div><button class="qty-btn" onclick="adj('cp3',1)">+</button></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Strawberry</div>
+    <div class="qty-row"><div><div class="qty-name">1 pc &mdash; &#8369;120</div><div class="qty-sub">no bundles available</div></div><div class="qty-controls"><button class="qty-btn" onclick="adj('sw1',-1)">&#8722;</button><div class="qty-num" id="sw1-d">0</div><button class="qty-btn" onclick="adj('sw1',1)">+</button></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Week Summary</div>
+    <div class="trow"><span class="tlabel">Cookies sold</span><span class="tval" id="o-sold">0</span></div>
+    <div class="trow"><span class="tlabel">Cookies made</span><span class="tval" id="o-made">80</span></div>
+    <div class="trow"><span class="tlabel">Leftover / unsold</span><span class="tval" id="o-left">80</span></div>
+    <div class="divider"></div>
+    <div class="trow"><span class="tlabel">Gross revenue</span><span class="tval" id="o-rev">&#8369;0</span></div>
+    <div class="trow"><span class="tlabel">COGS &mdash; consumed ingredients</span><span class="tval" id="o-cogs">&#8369;0</span></div>
+    <div class="trow"><span class="tlabel">Packaging cost</span><span class="tval" id="o-pkg">&#8369;0</span></div>
+    <div class="trow"><span class="tlabel">Overhead</span><span class="tval" id="o-oh">&#8369;0</span></div>
+    <div class="trow"><span class="tlabel" style="font-size:12px;">Cost per cookie (actual yield)</span><span class="tval" style="font-size:12px;" id="o-cpc">&#8369;0</span></div>
+    <div class="divider"></div>
+    <div class="trow big"><span class="tlabel">Net profit</span><span class="tval" id="o-profit">&#8369;0</span></div>
+    <div id="o-warn" style="margin-top:6px;"></div>
+  </div>
+  <button class="btn btn-primary btn-full" onclick="closeWeek()">Close this week &amp; start new week</button>
+</div>
+<div class="panel" id="tab-purchases">
+  <div class="section-header"><div class="section-title">Purchases</div><div class="section-sub">Log every Shopee order when it arrives.</div></div>
+  <div class="card">
+    <div class="card-title">New Purchase</div>
+    <div class="form-row"><span class="form-label">Order date</span><input type="date" id="pur-date" style="width:170px;"></div>
+    <div class="form-row"><span class="form-label">Due date</span><input type="date" id="pur-due" style="width:170px;"><span style="font-size:12px;color:var(--text-muted);">~30 days</span></div>
+    <div class="form-row"><span class="form-label">Note</span><input type="text" id="pur-note" placeholder="e.g. Shopee batch #3" style="width:210px;"></div>
+    <div style="margin:10px 0 6px;font-size:12px;color:var(--text-muted);font-weight:500;">Items:</div>
+    <div id="pur-lines"></div>
+    <button class="btn btn-sm" onclick="addPurLine()" style="margin-top:8px;">+ Add item</button>
+    <div class="divider"></div>
+    <div class="trow"><span class="tlabel">Total</span><span class="tval" id="pur-total">&#8369;0</span></div>
+    <button class="btn btn-primary btn-full" onclick="logPurchase()">Log purchase</button>
+    <div class="info-msg" id="pur-msg"></div>
+  </div>
+  <div class="card"><div class="card-title">This Week's Purchases</div><div id="pur-history"><p style="font-size:13px;color:var(--text-muted);">No purchases this week.</p></div></div>
+</div>
+<div class="panel" id="tab-inventory">
+  <div class="section-header"><div class="section-title">Inventory</div><div class="section-sub">Carried over + new purchases, minus consumption.</div></div>
+  <div class="card">
+    <div class="card-title">Ingredients</div>
+    <div style="display:grid;grid-template-columns:1fr repeat(4,auto);gap:4px 10px;margin-bottom:8px;"><span class="carry-head">Item</span><span class="carry-head" style="text-align:right">Carried</span><span class="carry-head" style="text-align:right">New</span><span class="carry-head" style="text-align:right">Used</span><span class="carry-head" style="text-align:right">Left</span></div>
+    <div id="inv-ing"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Packaging</div>
+    <div style="display:grid;grid-template-columns:1fr repeat(4,auto);gap:4px 10px;margin-bottom:8px;"><span class="carry-head">Item</span><span class="carry-head" style="text-align:right">Carried</span><span class="carry-head" style="text-align:right">New</span><span class="carry-head" style="text-align:right">Used</span><span class="carry-head" style="text-align:right">Left</span></div>
+    <div id="inv-pkg"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Deduct Consumption</div>
+    <div class="trow" style="margin-bottom:4px;"><span class="tlabel">Batches to deduct</span><input type="number" min="1" max="4" value="2" id="cons-batches" oninput="renderInventory()" style="width:64px;"></div>
+    <div style="font-size:12px;color:var(--text-muted);margin-top:6px;" id="cons-preview"></div>
+    <button class="btn btn-primary btn-full" onclick="logConsumption()">Deduct consumption</button>
+    <div class="info-msg" id="cons-msg"></div>
+  </div>
+</div>
+<div class="panel" id="tab-paylater">
+  <div class="section-header"><div class="section-title">Shopee PayLater</div><div class="section-sub">Pay when Shopee bills you (~30 days). Profit is always separate from payment timing.</div></div>
+  <div id="pl-alerts"></div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">All purchases</div><div class="metric-value" id="pl-total">&#8369;0</div></div>
+    <div class="metric"><div class="metric-label">Total paid</div><div class="metric-value pos" id="pl-paid">&#8369;0</div></div>
+    <div class="metric"><div class="metric-label">Still owed</div><div class="metric-value neg" id="pl-owed">&#8369;0</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Log a Payment</div>
+    <div class="form-row"><span class="form-label">Amount paid</span><input type="number" id="pay-amount" placeholder="e.g. 3500" style="width:140px;"></div>
+    <div class="form-row"><span class="form-label">Date paid</span><input type="date" id="pay-date" style="width:170px;"></div>
+    <button class="btn btn-primary" style="margin-top:4px;" onclick="logPayment()">Record payment</button>
+    <div class="info-msg" id="pay-msg"></div>
+  </div>
+  <div class="card"><div class="card-title">All Purchases &amp; Due Dates</div><div id="pl-breakdown"><p style="font-size:13px;color:var(--text-muted);">No purchases yet.</p></div></div>
+  <div class="card"><div class="card-title">Payment History</div><div id="pl-payments"><p style="font-size:13px;color:var(--text-muted);">No payments recorded.</p></div></div>
+</div>
+<div class="panel" id="tab-profit">
+  <div class="section-header"><div class="section-title">Costs &amp; Profit</div><div class="section-sub">Update prices when Shopee prices change.</div></div>
+  <div class="card"><div class="card-title">Ingredient Prices</div><table><thead><tr><th>Item</th><th>Pack</th><th class="r">Price (&#8369;)</th><th class="r">Per gram</th></tr></thead><tbody id="pr-ing"></tbody></table></div>
+  <div class="card"><div class="card-title">Packaging Prices</div><table><thead><tr><th>Item</th><th>Pack</th><th class="r">Price (&#8369;)</th><th class="r">Per pc</th></tr></thead><tbody id="pr-pkg"></tbody></table></div>
+  <div class="card">
+    <div class="card-title">This Week's Cost per Cookie</div>
+    <div class="trow"><span class="tlabel">Ingredient COGS per cookie</span><span class="tval" id="pr-ing-pc">&#8369;0</span></div>
+    <div class="trow"><span class="tlabel">Packaging per cookie</span><span class="tval" id="pr-pkg-pc">&#8369;0</span></div>
+    <div class="trow"><span class="tlabel">Overhead per cookie</span><span class="tval" id="pr-oh-pc">&#8369;0</span></div>
+    <div class="divider"></div>
+    <div class="trow big"><span class="tlabel">Total cost per cookie</span><span class="tval" id="pr-total-pc">&#8369;0</span></div>
+    <div class="divider"></div>
+    <div class="trow"><span class="tlabel">Classic Pistachio margin (1pc)</span><span class="tval" id="pr-cp">&#8212;</span></div>
+    <div class="trow"><span class="tlabel">Strawberry margin (1pc)</span><span class="tval" id="pr-sw">&#8212;</span></div>
+  </div>
+  <button class="btn btn-full" onclick="savePrices()">Save prices</button>
+  <div class="info-msg" id="pr-msg"></div>
+</div>
+<div class="panel" id="tab-history">
+  <div class="section-header"><div class="section-title">Week History</div><div class="section-sub">All closed weeks at a glance.</div></div>
+  <div id="history-list"><p style="font-size:13px;color:var(--text-muted);">No closed weeks yet. Close your first week from the Orders tab.</p></div>
+</div>
+</div>
+<div class="modal-overlay" id="modal" style="display:none;">
+  <div class="modal">
+    <div class="modal-title">Start a new week?</div>
+    <div class="modal-sub">Closes the current week and carries leftover inventory forward. Orders reset to zero.</div>
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--matcha);font-family:var(--font-display);">Inventory carrying over:</div>
+    <div id="modal-inv-list"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="flex:1;" onclick="confirmNewWeek()">Yes, start new week</button>
+      <button class="btn" style="flex:1;" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+<script>
+const BATCH_STD=40,OVERHEAD=75,MAX_BATCHES=4;
+const ING=[
+  {key:'kataifi',  name:'Kataifi',        unit:'g',packSize:1000,defPrice:1499,perBatch:280},
+  {key:'pistachio',name:'Pistachio sauce', unit:'g',packSize:550, defPrice:1199,perBatch:550},
+  {key:'mallows',  name:'Mallows',         unit:'g',packSize:680, defPrice:128, perBatch:680},
+  {key:'ricoa',    name:'Ricoa',           unit:'g',packSize:1000,defPrice:784, perBatch:160},
+];
+const PKG=[
+  {key:'liners',  name:'Liners',   packSize:100,defPrice:33, perBatch:40},
+  {key:'shells',  name:'Packages', packSize:100,defPrice:282,perBatch:40},
+  {key:'stickers',name:'Stickers', packSize:80, defPrice:113,perBatch:40},
+];
+const ALL=[...ING,...PKG];
+function ld(){try{return JSON.parse(localStorage.getItem('chichu_app')||'{}');}catch(e){return{};}}
+function sv(){try{localStorage.setItem('chichu_app',JSON.stringify(S));}catch(e){}}
+function blankWeek(){return{orders:{cp1:0,cp2:0,cp3:0,sw1:0},prod:{batches:2,actual:80},purchases:[],consumed:{},carryOver:{}};}
+let S=ld();
+if(!S.prices){S.prices={};ING.forEach(i=>S.prices[i.key]=i.defPrice);PKG.forEach(p=>S.prices[p.key]=p.defPrice);}
+if(!S.weeks||!S.weeks.length)S.weeks=[blankWeek()];
+if(S.currentWeek===undefined)S.currentWeek=0;
+if(!S.payments)S.payments=[];
+if(!S.closedWeeks)S.closedWeeks=[];
+const cw=()=>S.weeks[S.currentWeek];
+function ensureWeek(w){if(!w.consumed)w.consumed={};if(!w.carryOver)w.carryOver={};if(!w.purchases)w.purchases=[];ALL.forEach(x=>{if(w.consumed[x.key]===undefined)w.consumed[x.key]=0;if(w.carryOver[x.key]===undefined)w.carryOver[x.key]=0;});}
+ensureWeek(cw());
+function today(){return new Date().toISOString().split('T')[0];}
+function daysUntil(d){if(!d)return null;return Math.round((new Date(d)-new Date(today()))/(86400000));}
+function fmtDate(d){if(!d)return'--';try{return new Date(d).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});}catch(e){return d;}}
+function weekLabel(i){return'Week '+(i+1);}
+function getPurchasedThisWeek(key){let t=0;(cw().purchases||[]).forEach(p=>p.items.forEach(it=>{if(it.key===key)t+=it.qty;}));return t;}
+function getAllPurchases(){let all=[];S.weeks.forEach(w=>(w.purchases||[]).forEach(p=>all.push(p)));return all;}
+function adj(key,delta){cw().orders[key]=Math.max(0,(cw().orders[key]||0)+delta);document.getElementById(key+'-d').textContent=cw().orders[key];sv();updateOrders();}
+function getCOGS(batches,actual){let c=0;ING.forEach(i=>c+=(S.prices[i.key]/i.packSize)*i.perBatch*batches);c+=10*actual;return c;}
+function p(n){return'\u20b1'+Math.round(n).toLocaleString();}
+function updateOrders(){
+  const w=cw();
+  const batches=Math.max(1,parseInt(document.getElementById('prod-batches').value)||2);
+  const actual=Math.max(1,parseInt(document.getElementById('prod-actual').value)||(batches*BATCH_STD));
+  w.prod={batches,actual};sv();
+  document.getElementById('exp-yield').textContent=batches*BATCH_STD;
+  const o=w.orders,sold=o.cp1+o.cp2*2+o.cp3*3+o.sw1,shells=o.cp1+o.cp2+o.cp3+o.sw1;
+  const rev=o.cp1*100+o.cp2*180+o.cp3*250+o.sw1*120,left=actual-sold;
+  const cogs=getCOGS(batches,actual),pkg=(S.prices.liners/100+S.prices.shells/100+S.prices.stickers/80)*shells;
+  const oh=OVERHEAD*batches,profit=rev-cogs-pkg-oh,cpc=actual>0?(cogs+pkg+oh)/actual:0;
+  document.getElementById('o-sold').textContent=sold;
+  document.getElementById('o-made').textContent=actual;
+  const lEl=document.getElementById('o-left');lEl.textContent=left;lEl.style.color=left>5?'var(--amber)':'var(--text-dark)';
+  document.getElementById('o-rev').textContent=p(rev);
+  document.getElementById('o-cogs').textContent=p(cogs);
+  document.getElementById('o-pkg').textContent=p(pkg);
+  document.getElementById('o-oh').textContent=p(oh);
+  document.getElementById('o-cpc').textContent='\u20b1'+cpc.toFixed(2);
+  const pEl=document.getElementById('o-profit');pEl.textContent=p(profit);pEl.className='tval '+(profit>=0?'pos':'neg');
+  const wEl=document.getElementById('o-warn');
+  if(batches>MAX_BATCHES)wEl.innerHTML='<div class="alert alert-danger">Over max capacity -- 4 batches max per week.</div>';
+  else if(sold>actual)wEl.innerHTML='<div class="alert alert-danger">Orders exceed cookies made -- check your counts.</div>';
+  else if(batches>2)wEl.innerHTML='<div class="alert alert-warn">Above average -- confirm Meg & Ara are available.</div>';
+  else wEl.innerHTML='';
+  updateProfitTab(batches,actual);
+}
+let purLines=[];
+function addPurLine(){purLines.push({id:Date.now(),key:'kataifi',qty:0,price:0});renderPurLines();}
+function removePurLine(id){purLines=purLines.filter(l=>l.id!==id);renderPurLines();}
+function purLineChange(id,field,val){const l=purLines.find(x=>x.id===id);if(!l)return;if(field==='key')l.key=val;else if(field==='qty')l.qty=parseFloat(val)||0;else if(field==='price')l.price=parseFloat(val)||0;updatePurTotal();}
+function updatePurTotal(){document.getElementById('pur-total').textContent=p(purLines.reduce((s,l)=>s+l.price,0));}
+function renderPurLines(){
+  const c=document.getElementById('pur-lines');c.innerHTML='';
+  purLines.forEach(function(l){
+    const item=ALL.find(x=>x.key===l.key)||ALL[0];
+    const row=document.createElement('div');row.style.cssText='display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap;';
+    const opts=ALL.map(x=>'<option value="'+x.key+'"'+(x.key===l.key?' selected':'')+'>'+x.name+'</option>').join('');
+    row.innerHTML='<select onchange="purLineChange('+l.id+',\'key\',this.value)" style="flex:1;min-width:130px;">'+opts+'</select>'
+      +'<input type="number" min="0" placeholder="qty ('+(item.unit||'pcs')+')" style="width:88px;" value="'+(l.qty||'')+'" oninput="purLineChange('+l.id+',\'qty\',this.value)">'
+      +'<input type="number" min="0" placeholder="cost" style="width:80px;" value="'+(l.price||'')+'" oninput="purLineChange('+l.id+',\'price\',this.value)">'
+      +'<button class="del-btn" onclick="removePurLine('+l.id+')">x</button>';
+    c.appendChild(row);
+  });
+  updatePurTotal();
+}
+function logPurchase(){
+  if(!purLines.length){document.getElementById('pur-msg').textContent='Add at least one item.';return;}
+  const date=document.getElementById('pur-date').value||today(),due=document.getElementById('pur-due').value||'',note=document.getElementById('pur-note').value||'';
+  const total=purLines.reduce((s,l)=>s+l.price,0);
+  cw().purchases.push({id:Date.now(),date,due,note,total,weekIdx:S.currentWeek,items:purLines.map(l=>({key:l.key,qty:l.qty,price:l.price}))});
+  sv();purLines=[];document.getElementById('pur-lines').innerHTML='';
+  ['pur-date','pur-due','pur-note'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('pur-total').textContent='\u20b10';document.getElementById('pur-msg').textContent='Logged at '+new Date().toLocaleTimeString();
+  renderPurchaseHistory();renderInventory();renderPayLater();addPurLine();
+}
+function renderPurchaseHistory(){
+  const c=document.getElementById('pur-history'),purs=cw().purchases||[];
+  if(!purs.length){c.innerHTML='<p style="font-size:13px;color:var(--text-muted);">No purchases this week.</p>';return;}
+  c.innerHTML=[...purs].reverse().map(function(pur){
+    const dd=daysUntil(pur.due),dueTag=pur.due?(dd<0?'<span class="badge b-danger">Overdue</span>':dd<=7?'<span class="badge b-warn">Due in '+dd+'d</span>':'<span class="badge b-info">Due '+fmtDate(pur.due)+'</span>'):'';
+    const lines=pur.items.map(function(it){const x=ALL.find(a=>a.key===it.key);return(x?x.name:it.key)+': '+it.qty+(x&&x.unit?x.unit:'pcs')+' - \u20b1'+it.price;}).join('<br>');
+    return'<div class="pur-item"><div class="pur-header"><span class="pur-date">'+fmtDate(pur.date)+(pur.note?' - '+pur.note:'')+'</span><span class="pur-total">\u20b1'+Math.round(pur.total).toLocaleString()+' '+dueTag+'</span></div><div class="pur-lines">'+lines+'</div></div>';
+  }).join('');
+}
+function renderInventory(){
+  const w=cw();ensureWeek(w);
+  const consB=parseInt(document.getElementById('cons-batches').value)||2;
+  document.getElementById('cons-preview').textContent='Will deduct: '+ING.map(i=>i.name+' '+i.perBatch*consB+'g').join(', ')+' | '+PKG.map(pk=>pk.name+' '+pk.perBatch*consB+'pcs').join(', ');
+  function renderRows(items,cid,isIng){
+    const c=document.getElementById(cid);c.innerHTML='';
+    items.forEach(function(item){
+      const carried=w.carryOver[item.key]||0,ns=getPurchasedThisWeek(item.key),used=w.consumed[item.key]||0,rem=Math.max(0,carried+ns-used),bl=rem/item.perBatch;
+      const badge=bl>=2?'<span class="badge b-ok">OK</span>':bl>=1?'<span class="badge b-warn">Low</span>':'<span class="badge b-danger">Order</span>';
+      const u=isIng?'g':'pcs',row=document.createElement('div');
+      row.style.cssText='display:grid;grid-template-columns:1fr repeat(4,auto);gap:4px 10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border-soft);font-size:13px;';
+      row.innerHTML='<span style="font-weight:600;font-family:var(--font-display);">'+item.name+'</span>'
+        +'<span style="text-align:right;color:var(--text-muted);">'+carried+u+'</span>'
+        +'<span style="text-align:right;color:var(--matcha-mid);">'+ns+u+'</span>'
+        +'<span style="text-align:right;color:var(--text-muted);">'+used+u+'</span>'
+        +'<span style="text-align:right;">'+rem+u+' '+badge+'</span>';
+      c.appendChild(row);
+    });
+  }
+  renderRows(ING,'inv-ing',true);renderRows(PKG,'inv-pkg',false);
+}
+function logConsumption(){
+  const w=cw();ensureWeek(w);const batches=parseInt(document.getElementById('cons-batches').value)||2;
+  ING.forEach(i=>w.consumed[i.key]=(w.consumed[i.key]||0)+i.perBatch*batches);
+  PKG.forEach(pk=>w.consumed[pk.key]=(w.consumed[pk.key]||0)+pk.perBatch*batches);
+  sv();renderInventory();document.getElementById('cons-msg').textContent='Deducted '+batches+' batch(es) at '+new Date().toLocaleTimeString();
+}
+function renderPayLater(){
+  const allP=getAllPurchases(),totPur=allP.reduce((s,pur)=>s+pur.total,0),totPaid=S.payments.reduce((s,pay)=>s+pay.amount,0),owed=Math.max(0,totPur-totPaid);
+  document.getElementById('pl-total').textContent=p(totPur);
+  document.getElementById('pl-paid').textContent=p(totPaid);
+  document.getElementById('pl-owed').textContent=p(owed);
+  let ah='';
+  allP.forEach(function(pur){const dd=daysUntil(pur.due);if(pur.due&&dd<0)ah+='<div class="alert alert-danger">Overdue: \u20b1'+Math.round(pur.total).toLocaleString()+' from '+fmtDate(pur.date)+' ('+Math.abs(dd)+'d ago)</div>';else if(pur.due&&dd<=7)ah+='<div class="alert alert-warn">Due soon: \u20b1'+Math.round(pur.total).toLocaleString()+' from '+fmtDate(pur.date)+' -- due '+fmtDate(pur.due)+' (in '+dd+'d)</div>';});
+  document.getElementById('pl-alerts').innerHTML=ah;
+  const bd=document.getElementById('pl-breakdown');
+  if(!allP.length){bd.innerHTML='<p style="font-size:13px;color:var(--text-muted);">No purchases yet.</p>';return;}
+  bd.innerHTML=[...allP].reverse().map(function(pur){
+    const dd=daysUntil(pur.due),dueTag=pur.due?(dd<0?'<span class="badge b-danger">Overdue</span>':dd<=7?'<span class="badge b-warn">Due in '+dd+'d</span>':'<span class="badge b-info">Due '+fmtDate(pur.due)+'</span>'):'';
+    const lines=pur.items.map(function(it){const x=ALL.find(a=>a.key===it.key);return(x?x.name:it.key)+': '+it.qty+(x&&x.unit?x.unit:'pcs')+' - \u20b1'+it.price;}).join('<br>');
+    return'<div class="pur-item"><div class="pur-header"><span class="pur-date">'+fmtDate(pur.date)+' <span class="badge b-muted">'+weekLabel(pur.weekIdx||0)+'</span>'+(pur.note?' - '+pur.note:'')+'</span><span>'+dueTag+'</span></div><div class="pur-lines">'+lines+'</div><div style="font-size:13px;font-weight:700;margin-top:6px;font-family:var(--font-display);">Total: \u20b1'+Math.round(pur.total).toLocaleString()+'</div></div>';
+  }).join('');
+  const ph=document.getElementById('pl-payments');
+  if(!S.payments.length){ph.innerHTML='<p style="font-size:13px;color:var(--text-muted);">No payments recorded.</p>';return;}
+  ph.innerHTML=[...S.payments].reverse().map(pay=>'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft);"><span style="font-size:13px;color:var(--text-muted);">'+fmtDate(pay.date)+'</span><span style="font-size:13px;font-weight:700;font-family:var(--font-display);" class="pos">-\u20b1'+Math.round(pay.amount).toLocaleString()+'</span></div>').join('');
+}
+function logPayment(){
+  const amt=parseFloat(document.getElementById('pay-amount').value)||0;
+  if(!amt){document.getElementById('pay-msg').textContent='Enter an amount.';return;}
+  const date=document.getElementById('pay-date').value||today();
+  S.payments.push({id:Date.now(),amount:amt,date});sv();renderPayLater();
+  document.getElementById('pay-amount').value='';document.getElementById('pay-date').value='';document.getElementById('pay-msg').textContent='Payment recorded.';
+}
+function renderProfitTab(){
+  const t1=document.getElementById('pr-ing');t1.innerHTML='';
+  ING.forEach(i=>{const pr=S.prices[i.key];t1.innerHTML+='<tr><td>'+i.name+'</td><td style="color:var(--text-muted)">'+i.packSize+'g</td><td class="r"><input type="number" min="0" value="'+pr+'" onchange="updateIngPrice(\''+i.key+'\',this.value)" style="width:80px;"></td><td class="r" style="color:var(--text-muted);">\u20b1'+(pr/i.packSize).toFixed(3)+'/g</td></tr>';});
+  const t2=document.getElementById('pr-pkg');t2.innerHTML='';
+  PKG.forEach(pk=>{const pr=S.prices[pk.key];t2.innerHTML+='<tr><td>'+pk.name+'</td><td style="color:var(--text-muted)">'+pk.packSize+'pcs</td><td class="r"><input type="number" min="0" value="'+pr+'" onchange="updatePkgPrice(\''+pk.key+'\',this.value)" style="width:80px;"></td><td class="r" style="color:var(--text-muted);">\u20b1'+(pr/pk.packSize).toFixed(2)+'/pc</td></tr>';});
+  updateProfitTab(cw().prod.batches||2,cw().prod.actual||80);
+}
+function updateIngPrice(key,val){S.prices[key]=parseFloat(val)||0;updateProfitTab(cw().prod.batches||2,cw().prod.actual||80);updateOrders();}
+function updatePkgPrice(key,val){S.prices[key]=parseFloat(val)||0;updateProfitTab(cw().prod.batches||2,cw().prod.actual||80);updateOrders();}
+function updateProfitTab(batches,actual){
+  const cogs=getCOGS(batches,actual),ingPC=cogs/actual,pkgPC=S.prices.liners/100+S.prices.shells/100+S.prices.stickers/80,ohPC=(OVERHEAD*batches)/actual,total=ingPC+pkgPC+ohPC;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('pr-ing-pc','\u20b1'+ingPC.toFixed(2));set('pr-pkg-pc','\u20b1'+pkgPC.toFixed(2));set('pr-oh-pc','\u20b1'+ohPC.toFixed(2));set('pr-total-pc','\u20b1'+total.toFixed(2));
+  const cpEl=document.getElementById('pr-cp');if(cpEl){cpEl.textContent=((100-total)/100*100).toFixed(1)+'%';cpEl.className='tval '+(100>total?'pos':'neg');}
+  const swEl=document.getElementById('pr-sw');if(swEl){swEl.textContent=((120-total)/120*100).toFixed(1)+'%';swEl.className='tval '+(120>total?'pos':'neg');}
+}
+function savePrices(){sv();renderProfitTab();updateOrders();document.getElementById('pr-msg').textContent='Saved at '+new Date().toLocaleTimeString();}
+function closeWeek(){
+  const w=cw();ensureWeek(w);const cf={};
+  ALL.forEach(item=>{const c=w.carryOver[item.key]||0,ns=getPurchasedThisWeek(item.key),used=w.consumed[item.key]||0;cf[item.key]=Math.max(0,c+ns-used);});
+  document.getElementById('modal-inv-list').innerHTML=ALL.map(item=>'<div class="modal-inv-row"><span class="modal-inv-name">'+item.name+'</span><span class="modal-inv-rem">'+cf[item.key]+(item.unit||'pcs')+'</span></div>').join('');
+  document.getElementById('modal').style.display='flex';window._pendingCarry=cf;
+}
+function closeModal(){document.getElementById('modal').style.display='none';}
+function confirmNewWeek(){
+  const carry=window._pendingCarry||{},w=cw(),o=w.orders,batches=w.prod.batches||2,actual=w.prod.actual||80;
+  const sold=o.cp1+o.cp2*2+o.cp3*3+o.sw1,shells=o.cp1+o.cp2+o.cp3+o.sw1;
+  const rev=o.cp1*100+o.cp2*180+o.cp3*250+o.sw1*120,cogs=getCOGS(batches,actual);
+  const pkg=(S.prices.liners/100+S.prices.shells/100+S.prices.stickers/80)*shells,oh=OVERHEAD*batches;
+  S.closedWeeks.push({weekIdx:S.currentWeek,label:weekLabel(S.currentWeek),revenue:rev,cogs,pkg,oh,profit:rev-cogs-pkg-oh,sold,made:actual,batches});
+  const nw=blankWeek();nw.carryOver={...carry};S.weeks.push(nw);S.currentWeek=S.weeks.length-1;ensureWeek(cw());
+  sv();closeModal();loadWeek();
+}
+function renderHistory(){
+  const c=document.getElementById('history-list');
+  if(!S.closedWeeks||!S.closedWeeks.length){c.innerHTML='<p style="font-size:13px;color:var(--text-muted);">No closed weeks yet.</p>';return;}
+  c.innerHTML=[...S.closedWeeks].reverse().map(w=>'<div class="history-week"><div class="history-week-header"><span class="history-week-label">'+w.label+'</span><span class="tval '+(w.profit>=0?'pos':'neg')+'">\u20b1'+Math.round(w.profit).toLocaleString()+'</span></div><div class="trow"><span class="tlabel">Revenue</span><span class="tval">\u20b1'+Math.round(w.revenue).toLocaleString()+'</span></div><div class="trow"><span class="tlabel">COGS</span><span class="tval">\u20b1'+Math.round(w.cogs).toLocaleString()+'</span></div><div class="trow"><span class="tlabel">Packaging</span><span class="tval">\u20b1'+Math.round(w.pkg).toLocaleString()+'</span></div><div class="trow"><span class="tlabel">Overhead</span><span class="tval">\u20b1'+Math.round(w.oh).toLocaleString()+'</span></div><div class="divider"></div><div class="trow"><span class="tlabel">Cookies sold / made</span><span class="tval">'+w.sold+' / '+w.made+'</span></div><div class="trow"><span class="tlabel">Batches</span><span class="tval">'+w.batches+'</span></div></div>').join('');
+}
+function goWeek(dir){const next=S.currentWeek+dir;if(next<0||next>=S.weeks.length)return;S.currentWeek=next;sv();loadWeek();}
+function loadWeek(){
+  const w=cw();ensureWeek(w);
+  document.getElementById('week-label').textContent=weekLabel(S.currentWeek);
+  ['cp1','cp2','cp3','sw1'].forEach(k=>{const el=document.getElementById(k+'-d');if(el)el.textContent=w.orders[k]||0;});
+  document.getElementById('prod-batches').value=w.prod.batches||2;document.getElementById('prod-actual').value=w.prod.actual||80;
+  updateOrders();renderPurchaseHistory();renderInventory();renderPayLater();renderProfitTab();renderHistory();
+}
+function showTab(id){
+  const tabs=['orders','purchases','inventory','paylater','profit','history'];
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab')[tabs.indexOf(id)].classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='inventory')renderInventory();if(id==='paylater')renderPayLater();if(id==='profit')renderProfitTab();if(id==='history')renderHistory();
+}
+addPurLine();loadWeek();
+</script>
+</body>
+</html>
